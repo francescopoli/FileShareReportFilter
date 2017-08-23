@@ -9,5 +9,7 @@ Due to that missing scripts, the HTML reports are not generated, (suggest to com
 Just run the script from PowerShell, by either:
 
 .\Filter-Reports.ps1 -Path C:\folderWhereFilesAreStored
+
 or
+
 just copy the file in the same folder where the files are located and run .\Filter-Reports.ps1
