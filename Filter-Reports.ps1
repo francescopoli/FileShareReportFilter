@@ -32,7 +32,8 @@
             $tunebuffering parameter
             modified output to include the -verbose output
             added -path parameter to force a directory, try process the local folder
-		
+		2017/11/15 : fixed the new column names with 350 chars
+ 
         Contributors: 
         
 
