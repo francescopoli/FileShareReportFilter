@@ -142,7 +142,7 @@ FilterReport function
                 #FileshareInventory is unlikely to have multiple files, quick processing
                 foreach($entry in $entries)
                 {
-                    $error = [int]$entry.File_IsCrossed350CharsCount + [int]$entry.FileCountGreaterThanThresholdMB + [int]$entry.Folder_IsCrossed350CharsCount + [int]$entry.InvalidFileTypeCount
+                    $error = [int]$entry.File_IsCrossed350CharsCount + [int]$entry.FileCountGreaterThanThresholdMB + [int]$entry.Folder_IsCrossed350CharsCount + [int]$entry.InvalidFileTypeCount  + [int]$entry.'File_InvalidCharactersCount(Auto-Remediated)' + [int]$entry.'InvalidFolderNamesCount(Auto-Remediated)' 
                     if ( ($error) -gt 0) 
                     {
                         $errors++
@@ -162,7 +162,7 @@ FilterReport function
                 foreach($entry in $entries)
                 {
                     $done++
-                    if ( ($entry.IsCrossed350Chars -eq "TRUE") ) 
+                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or ($entry.'HasInvalidFolderNames(Auto-remediated)' -eq "TRUES" -or ($entry.'HasInvalidCharacters(Auto-remediated)' -eq "TRUES")  ) 
                     {
                         $count++
                         $errors++
@@ -196,7 +196,7 @@ FilterReport function
                 foreach($entry in $entries)
                 {
                     $done++
-                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or  ($entry.'Greater than 2GB' -eq "TRUE")   -or  ($entry.'IsInvalidFileType' -eq "TRUE") ) 
+                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or  ($entry.'Greater than 2GB' -eq "TRUE")   -or  ($entry.'IsInvalidFileType' -eq "TRUE") -or ($entry.'HasInvalidCharacters(Auto-remediated)') ) 
                     {
                         $count++
                         $errors++
@@ -393,12 +393,8 @@ SplitReport function
                     if($buffer)
                     {
                         Write-Verbose "Flushing $($buffer.Count) folders to disk"
+                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
                         $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                        if ($error){
-                            if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                            $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                            $Error.Clear()
-                        }
                         $count+=$buffer.Count
                         $buffer=@()
                         Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -407,12 +403,8 @@ SplitReport function
                 if($buffer.count -ge 2000)
                 {
                     Write-Verbose "Flushing $($buffer.Count) files to disk"
+                    if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
                     $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                      if ($error){
-                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                        $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                        $Error.Clear()
-                      }
                     $count+=$buffer.Count
                     $buffer=@()
                     Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -457,12 +449,8 @@ SplitReport function
                 {
                     if($buffer){
                         Write-Verbose "Flushing $($buffer.Count) files to disk"
+                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
                         $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                        if ($error){
-                            if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                            $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                            $Error.Clear()
-                        }
                         $count+=$buffer.Count
                         $buffer=@()
                         write-verbose "---------------------------> Tried to flush $($count) so far"
@@ -471,12 +459,8 @@ SplitReport function
                 if($buffer.count -ge 2000)
                 {
                     Write-Verbose "Flushing $($buffer.Count) files to disk"
+                    if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
                     $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                    if ($error){
-                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                            $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
-                            $Error.Clear()
-                     }
                     $count+=$buffer.Count
                     $buffer=@()
                     Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -495,8 +479,7 @@ SplitReport function
     }
 }
 
-　
-　
+
 Process{
 
 #region Process Fileshare,File,Folder report
@@ -647,5 +630,5 @@ Write-Verbose "Splitfolder: $splitFolder"
 
 [System.GC]::Collect()
 
-　
+
 } 
