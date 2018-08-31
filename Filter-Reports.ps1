@@ -55,7 +55,7 @@
 
     .EXAMPLE
         .\Filter-Reports.ps1 
-        .\Filter-Reports.ps1 -Path C:\folderWhereFilesAreStored
+        .\Filter-Reports.ps1 -Path C:\folderWhereFilesAreStored -verbose
         .\Filter-Reports.ps1 -MergeOnly
         .\Filter-Reports.ps1 -TuneBuffering 5000
         .\Filter-Reports.ps1 -SplitOnly 
