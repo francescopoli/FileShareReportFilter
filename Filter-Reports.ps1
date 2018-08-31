@@ -33,6 +33,8 @@
             modified output to include the -verbose output
             added -path parameter to force a directory, try process the local folder
 		2017/11/15 : fixed the new column names with 350 chars
+        2018/08/31: added the invalid file\folder invalid character and names in filtered report.
+                    addded the -GenerateHTML parameter to trigger the reports generation(internal FTC only, usally to not be used)
  
         Contributors: 
         
@@ -63,10 +65,10 @@ Param (
     [Parameter(Mandatory=$false)][String] $Path = $pwd,
     [Parameter(Mandatory=$false)][Switch] $MergeOnly,
     [Parameter(Mandatory=$false)][Switch] $SplitOnly,
-    [Parameter(Mandatory=$false)][int] $TuneBuffering = 2000
+    [Parameter(Mandatory=$false)][int] $TuneBuffering = 2000,
+    [parameter(Mandatory=$false)][switch] $GenerateHTML
 )
 
-　
 begin{
     # runPath: where the fileshare, files and folders reports are located
     if ($Path -ne $pwd)
@@ -162,7 +164,9 @@ FilterReport function
                 foreach($entry in $entries)
                 {
                     $done++
-                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or ($entry.'HasInvalidFolderNames(Auto-remediated)' -eq "TRUES" -or ($entry.'HasInvalidCharacters(Auto-remediated)' -eq "TRUES")  ) 
+                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or 
+                         ($entry.'HasInvalidFolderNames(Auto-remediated)' -eq "TRUE") -or 
+                         ($entry.'HasInvalidCharacters(Auto-remediated)' -eq "TRUE")  ) 
                     {
                         $count++
                         $errors++
@@ -196,7 +200,7 @@ FilterReport function
                 foreach($entry in $entries)
                 {
                     $done++
-                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or  ($entry.'Greater than 2GB' -eq "TRUE")   -or  ($entry.'IsInvalidFileType' -eq "TRUE") -or ($entry.'HasInvalidCharacters(Auto-remediated)') ) 
+                    if ( ($entry.IsCrossed350Chars -eq "TRUE") -or  ($entry.'Greater than 2GB' -eq "TRUE")   -or  ($entry.'IsInvalidFileType' -eq "TRUE") -or ($entry.'HasInvalidCharacters(Auto-remediated)' -eq "TRUE") ) 
                     {
                         $count++
                         $errors++
@@ -263,7 +267,6 @@ FilterReport function
         [System.GC]::Collect()
     }
 
-　
 <#
 MergeReports function
     receive a list of files of specific scope (fileshare, file or folders) and  consolidate them
@@ -310,7 +313,7 @@ MergeReports function
         $append=$null
     }
 
-　
+
 <#
 SplitReport function
     Function pick main set FileShareInventory,FileInventory and FoldersInventory and split them
@@ -325,7 +328,7 @@ SplitReport function
         [Parameter(Mandatory=$True)][string]$outputFolder
     )
 
-　
+
         <#
             # v parse the FileShareReport and create a folder for each FileShare 
             # v using the fileshare due to the consolidated view it hold -> help bypassing checks when processing files and folders reports
@@ -393,8 +396,12 @@ SplitReport function
                     if($buffer)
                     {
                         Write-Verbose "Flushing $($buffer.Count) folders to disk"
-                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                        $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
+                        #if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
+                        $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append -ErrorAction SilentlyContinue -ErrorVariable ev
+                        if ($ev){ 
+                            if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory} 
+                            $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append 
+                        } 
                         $count+=$buffer.Count
                         $buffer=@()
                         Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -403,8 +410,12 @@ SplitReport function
                 if($buffer.count -ge 2000)
                 {
                     Write-Verbose "Flushing $($buffer.Count) files to disk"
-                    if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                    $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
+                    #if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
+                    $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append -ErrorAction SilentlyContinue -ErrorVariable ev
+                    if ($ev){ 
+                            if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory} 
+                            $buffer | Export-csv -Path "$last\FolderInventory.csv" -NoTypeInformation -Encoding UTF8 -Append 
+                        } 
                     $count+=$buffer.Count
                     $buffer=@()
                     Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -421,7 +432,6 @@ SplitReport function
             $buffer = $null
         }
 
-　
         <#
             Neither Folders or Files are guaranteed to be sorted, and just in case they are not, playing
             safe by flushing items to disk each 2000 items or when file\folder change 
@@ -449,8 +459,12 @@ SplitReport function
                 {
                     if($buffer){
                         Write-Verbose "Flushing $($buffer.Count) files to disk"
-                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                        $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
+                        #if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
+                        $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append -ErrorAction SilentlyContinue -ErrorVariable ev
+                        if ($ev){ 
+                            if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory} 
+                            $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append 
+                        } 
                         $count+=$buffer.Count
                         $buffer=@()
                         write-verbose "---------------------------> Tried to flush $($count) so far"
@@ -459,8 +473,13 @@ SplitReport function
                 if($buffer.count -ge 2000)
                 {
                     Write-Verbose "Flushing $($buffer.Count) files to disk"
-                    if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
-                    $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append
+                    #if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory}
+                    $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append -ErrorAction SilentlyContinue -ErrorVariable ev
+                    if ($ev){ 
+                        if ( -not(Test-Path ("$last")) ){New-Item ("$last") -ItemType Directory} 
+                        $buffer | Export-csv -Path "$last\FileInventory.csv" -NoTypeInformation -Encoding UTF8 -Append 
+                        $ev = $null 
+                    }
                     $count+=$buffer.Count
                     $buffer=@()
                     Write-Verbose "---------------------------> Tried to flush $($count) so far"
@@ -604,28 +623,29 @@ SplitReport -FileShareInventory ($splitPath+'*FileShareInventory*.csv') `
             -FolderInventory ($splitPath+'*FolderInventory*.csv') `
             -outputFolder $splitPath
 
-Write-host "Generating HTML reports in SplitPath: $splitPath"
+if ($GenerateHTML){
+    Write-host "Generating HTML reports in SplitPath: $splitPath"
 
-foreach($splitFolder in (Get-ChildItem -Directory -Path $splitPath)){
-Write-Verbose "Splitfolder: $splitFolder"
-    foreach($dir in (Get-ChildItem -Directory -Path $splitFolder.FullName)){
-        Write-Verbose "report folder $dir.FullName"
-        $file = Get-ChildItem -File -Path $dir.FullName
-        $size=0
-        foreach($f in $file) {
-            $size += $f.length
-        }
-        if ($size -lt 10485760){
-             & "$($PSScriptRoot)\Create-FileshareReport_ftc.ps1" -Path $($dir.fullname)
-        }
-        else{
-            $notDone = "Not Done: $($dir.FullName)"
-            $notDone | Out-File ($splitPath+'\ToBigToProcess.log') -Append
-        }
+    foreach($splitFolder in (Get-ChildItem -Directory -Path $splitPath)){
+    Write-Verbose "Splitfolder: $splitFolder"
+        foreach($dir in (Get-ChildItem -Directory -Path $splitFolder.FullName)){
+            Write-Verbose "report folder $dir.FullName"
+            $file = Get-ChildItem -File -Path $dir.FullName
+            $size=0
+            foreach($f in $file) {
+                $size += $f.length
+            }
+            if ($size -lt 10485760){
+                 & "$($PSScriptRoot)\Create-FileshareReport_ftc.ps1" -Path $($dir.fullname)
+            }
+            else{
+                $notDone = "Not Done: $($dir.FullName)"
+                $notDone | Out-File ($splitPath+'\ToBigToProcess.log') -Append
+            }
+         }
      }
+     Write-host "File too big that were NOT processed (if any) are listed here: ($($splitPath)ToBigToProcess.log)"
  }
- Write-host "File too big that were NOT processed (if any) are listed here: ($($splitPath)ToBigToProcess.log)"
-
 #endregion
 
 [System.GC]::Collect()
