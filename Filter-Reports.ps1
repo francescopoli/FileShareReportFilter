@@ -70,6 +70,8 @@ Param (
 )
 
 begin{
+    $errorStyle = $ErrorActionPreference
+    $ErrorActionPreference = "silentlycontinue"
     # runPath: where the fileshare, files and folders reports are located
     if ($Path -ne $pwd)
     {
@@ -648,6 +650,7 @@ if ($GenerateHTML){
  }
 #endregion
 
+$ErrorActionPreference = $errorStyle
 [System.GC]::Collect()
 
 
