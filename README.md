@@ -13,4 +13,4 @@ The <code>-verbose</code> is always a suggested parameter if you have a set of f
 
 There are multiple parameters present, them can be investigated it the script initial help commment, but most of the time, you will not be in need to use them.<br>
 
-If you do not specify the <code>-path</code> parameter, the script will try to locate the csv files in the same folder from wher it is being run.
+If you do not specify the <code>-path</code> parameter, the script will try to locate the csv files in the same folder from where it's being run.
